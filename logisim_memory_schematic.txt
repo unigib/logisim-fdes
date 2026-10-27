@@ -1,0 +1,98 @@
+======================================================================================
+LOGISIM DIGITAL CIRCUIT SCHEMATIC: MANUAL ACCUMULATOR & RAM STORAGE SYSTEM
+======================================================================================
+
+[1. INPUT STAGE]
+                                     +---------------+
+  [Switch 7] (1-bit) --------------> |               |
+  [Switch 6] (1-bit) --------------> |               |
+  [Switch 5] (1-bit) --------------> |   SPLITTER    |      8-bit Bus
+  [Switch 4] (1-bit) --------------> |               |====================+
+  [Switch 3] (1-bit) --------------> | (Fan-out: 8)  |                    |
+  [Switch 2] (1-bit) --------------> | (Bit-width: 8)|                    |
+  [Switch 1] (1-bit) --------------> |               |                    |
+  [Switch 0] (1-bit) --------------> |               |                    |
+                                     +---------------+                    |
+                                                                          |
+                                                                          v
+[2. DATA BUFFER STAGE]                                           +-----------------+
+                                                                 |  DATA REGISTER  |
+                                             8-bit Data Bus      |    (8-bit)      |
+                                        +----------------------- | D             Q |
+                                        |                        |                 |
+                                        |     [Set Buffer] ----->| Clock (Rising)  |
+                                        |                        |                 |
+                                        |     +----------------> | Clr             |
+                                        |     |                  +-----------------+
+                                        |     |
+                                        v     |
+[3. MEMORY & CONTROL STAGE]             |     |
+                                        |     |
+        +-------------------------------+     |
+        |                                     |
+        v                                     |
++---------------+                             |
+|   RAM BLOCK   |                             |
+|    (8x8)      |                             |
+|               |                             |
+| D (Data)      |                             |
+|               |                             |
+| A (Address)   | <=========+                 |
+|               |           |                 |
+| str (Write)   | <--+      |                 |
+|               |    |      |                 |
+| clr (Clear)   | -+ |      |                 |
++---------------+  | |      |                 |
+                   | |      |                 |
+                   | |      |  8-bit          |
+                   | |      |  Address Bus    |
+                   | |      |                 |
+                   | |   +-----------------+  |
+                   | |   | ADDRESS COUNTER |  |
+                   | |   |    (8-bit)      |  |
+                   | |   |               Q |==+
+                   | |   |                 |
+                   | |   | Clock (Falling) |
+                   | |   |                 |
+                   | +-- | Clr             |
+                   |     +-----------------+
+                   |              ^     ^
+                   |              |     |
+                   |   +----------+     |
+                   |   |                |
+                   v   |                |
+        +-----------------------+       |
+        | [Store & Increment]   |       |
+        | Button (Pulse High)   |       |
+        +-----------------------+       |
+                                        |
+        +-------------------------------+
+        | [Master Clear]                |
+        | Button (Pulse High)           |
+        +-------------------------------+
+
+======================================================================================
+SIGNAL ROUTING & TIMING ANALYSIS (FOR LOGISIM TEACHING)
+======================================================================================
+
+1. DATA ROUTING:
+   - Switches (8 separate inputs) -> Splitter -> Combine into 8-bit ribbon cable.
+   - 8-bit ribbon -> D input of DATA REGISTER.
+   - DATA REGISTER Q output -> D input/output array pin of the 8x8 RAM block.
+
+2. ADDRESS ROUTING:
+   - ADDRESS COUNTER Q output -> 8-bit ribbon cable -> A (Address) input pin of RAM.
+
+3. CONTROL BUS LOGIC:
+   - [Set Buffer] Button: Connects directly to Data Register Clock. On push (Rising Edge),
+     it locks the current switch matrix state into the register.
+   
+   - [Store & Increment] Button: Connects to two places simultaneously:
+     a) RAM "str" (Store/Write Enable) pin (Active High).
+     b) Counter "Clock" pin. IMPORTANT: Change Counter attribute to "Trigger: Falling Edge".
+        * WHENS PRESSED (Rising): RAM 'str' goes high, writing Data Register into current Address.
+        * WHEN RELEASED (Falling): Counter increments by 1, preparing the next memory address slot.
+
+   - [Master Clear] Button: Connects directly to the "Clr" (Asynchronous Clear) inputs
+     of BOTH the Data Register and the Address Counter. Optionally paths to RAM 'clr'.
+======================================================================================
